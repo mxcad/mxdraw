@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbText 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(async () => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+
+        // 创建图纸展示控件实例
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+        })
+        let text = new Mx.MxDbText()
+        text.position = new THREE.Vector3(0,0,0)
+        text.height = Mx.MxFun.screenCoordLong2Doc(50)
+        text.text = '测试文本'
+        Mx.MxFun.getCurrentDraw().addMxEntity(text);
+    })
+   async function draw_text() {
+        const getPoint = new Mx.MrxDbgUiPrPoint()
+
+        getPoint.setMessage('\n 点取文字插入点:')
+        let ptVal = await getPoint.go()
+        if (!ptVal) return
+        let text = new Mx.MxDbText()
+        text.position = ptVal
+        text.height = Mx.MxFun.screenCoordLong2Doc(50)
+        text.text = '测试文本'
+        Mx.MxFun.getCurrentDraw().addMxEntity(text);
+        // GUI
+        const gui = new GUI()
+        gui.addColor(text, 'color')
+        gui.add(text, 'padding', 0, 10).name('padding 内边距')
+        gui.add(text, 'strokeWidth', 0, 10).name('strokeWidth 笔划宽度')
+        gui.add(text, 'borderWidth', 0, 10).name('borderWidth 边框宽度')
+        gui.add(text, 'borderRadius', 0, 10).name('borderRadius 边框圆角')
+        gui.add(text, 'opacity', 0, 1, 0.1).name('opacity 透明度')
+        gui.add(text, 'text').name('text 文本内容')
+        gui.add(text, 'height').name('height 字高')
+        gui.add(text, 'textAlign', ['center', 'left', 'right']).name('textAlign 对齐方式')
+        gui.add(text, 'textShadowBlur', 0, 10).name('textShadowBlur 文字阴影模糊程度')
+        gui.add(text, 'fontWeight', ['normal', 'bold', 'lighter', 'bolder', 'inherit',
+            100, 200, 300, 400, 500, 600, 700, 800, 900]).name('fontWeight 字体粗细')
+        gui.add(text, 'textShadowOffsetX', 0, 10).name('textShadowOffsetX 文字阴影X轴偏移量')
+        gui.add(text, 'textShadowOffsetY', 0, 10).name('textShadowOffsetY 文字阴影Y轴偏移量')
+        gui.add(text, 'angle', 0, Math.PI * 2, 0.01).name('angle 旋转角度')
+        gui.add(text, 'scale', 0, 10).name('scale 缩放因子')
+        gui.add(text, 'fontSize', 80, 200, 10).name('fontSize 字体大小')
+        gui.add(text, 'underline', 80, 200, 10).name('underline 下划线')
+        gui.onFinishChange((event) => {
+            text.setNeedUpdateDisplay(true)
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> draw_text()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制文字')
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

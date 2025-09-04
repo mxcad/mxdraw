@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>drawingConversion 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.es5.js"
+    import GUI from "../lil-gui.module.js"
+   
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad",
+            cadFile: "../../demo/buf/$hhhh.dwg",
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+            },
+        });
+    })
+    console.log("Mx", Mx)
+    const uiParams = {
+        save() {
+             const res = Mx.MxFun.getCurrentDraw().saveMxEntityToJson()
+             localStorage.setItem('mx-data', res);
+             alert("保存批注成功 可刷新页面 点恢复批注")
+        },
+        restore() {
+            Mx.MxFun.getCurrentDraw().loadMxEntityFromJson(localStorage.getItem('mx-data'))
+            Mx.MxFun.updateDisplay()
+        },
+        delAll() {
+            Mx.MxFun.getCurrentDraw().eraseAllMxEntity()
+            Mx.MxFun.updateDisplay()
+        },
+        refresh() {
+            location.reload()
+        },
+
+        useMxDbCoord() {
+            Mx.MxDbCoord.use()
+        },
+        useMxDb2LineAngularDimension() {
+            Mx.MxDb2LineAngularDimension.use()
+        },
+        useMxDbAlignedDimension() {
+            Mx.MxDbAlignedDimension.use()
+        },
+        useMxDbLeadComment() {
+            Mx.MxDbLeadComment.use()
+        },
+        useMxDbLeadTag() {
+            Mx.MxDbLeadTag.use()
+        },
+        useMxDbRectBoxLeadComment() {
+            Mx.MxDbRectBoxLeadComment.use()
+        },
+        useCustomAnnotations() {
+            const THREE = Mx.MxFun.getMxFunTHREE()
+            
+            // 自定义标注
+            class CustomAnnotations extends Mx.MxDbEntity {
+                static cmd = "Mx_CustomAnnotations"
+                static draw = drawCustomAnnotations
+                pt1 = new THREE.Vector3()
+                pt2 = new THREE.Vector3()
+                getTypeName() {
+                    return 'CustomAnnotations'
+                }
+
+                // 绘制
+                worldDraw(pWorldDraw) {
+                    pWorldDraw.drawLine(this.pt1, this.pt2)
+                    pWorldDraw.drawCircle(this.pt1, 1000)
+                    pWorldDraw.drawCircle(this.pt2, 1000)
+                    const midPoint = new THREE.Vector3(
+                        this.pt1.x + (this.pt2.x - this.pt1.x) * 0.5,
+                        this.pt1.y + (this.pt2.y - this.pt1.y) * 0.5,
+                        0
+                    )
+                    pWorldDraw.drawCircle(midPoint, 1000)
+                }
+
+                getGripPoints() {
+                    let ret = []
+                    ret.push(this.pt1)
+                    ret.push(this.pt2)
+                    let midPoint = new THREE.Vector3(
+                        this.pt1.x + (this.pt2.x - this.pt1.x) * 0.5,
+                        this.pt1.y + (this.pt2.y - this.pt1.y) * 0.5,
+                        0
+                    )
+                    ret.push(midPoint)
+                    return ret
+                }
+
+                moveGripPointsAt(index, offset) {
+                    if (index == 0) {
+                        this.pt1.add(offset)
+                    } else if (index == 1) {
+                        this.pt2.add(offset)
+                    } else if (index == 2) {
+                        this.pt1.add(offset)
+                        this.pt2.add(offset)
+                    }
+                    return true
+                }
+
+                dwgIn(obj) {
+                    this.onDwgIn(obj)
+                    this.pt1.copy(obj['pt1'])
+                    this.pt2.copy(obj['pt2'])
+                    return true
+                }
+
+                dwgOut(obj) {
+                    this.onDwgOut(obj)
+                    obj['pt1'] = this.pt1
+                    obj['pt2'] = this.pt2
+                    return obj
+                }
+
+                create() {
+                    return new CustomAnnotations()
+                }
+            }
+            CustomAnnotations.register()
+            // 自定义标注绘制流程函数
+            async function drawCustomAnnotations() {
+                const getPoint = new Mx.MrxDbgUiPrPoint();
+                getPoint.setMessage("\n指定第一点:");
+                let pt1 = await getPoint.go();
+                if(pt1 == null){
+                    return;
+                }
+                getPoint.setBasePt(pt1.clone());
+                getPoint.setUseBasePt(true);
+                getPoint.setMessage("\n指定第二点:");
+                let pt2 = await getPoint.go();
+                if(pt2 == null){
+                    return;
+                }
+                let line  = new CustomAnnotations() 
+                line.pt1 = pt1;
+                line.pt2 = pt2;
+                Mx.MxFun.addToCurrentSpace(line);
+            }
+            CustomAnnotations.use()
+        }
+    }
+    
+    const brushProps = {
+        color: 0xFFFFFF,
+        dLineWidth: 2,
+        // ...可以设置对应图形的所有属性
+    }
+
+    const gui  = new GUI()
+    const base =  gui.addFolder("基础功能")
+    const draw =  gui.addFolder("批注功能")
+    const brush = gui.addFolder("画笔属性")
+    brush.onFinishChange(()=> {
+        Mx.MxPaintBrush.setProps(brushProps)
+    })
+    base.add(uiParams, "save").name("保存批注")
+    base.add(uiParams, "restore").name("恢复批注")
+    base.add(uiParams, "delAll").name("删除全部批注")
+    base.add(uiParams, "refresh").name("刷新页面")
+
+    draw.add(uiParams, "useMxDbCoord").name("引线坐标")
+    draw.add(uiParams, "useMxDb2LineAngularDimension").name("角度测量批注")
+    draw.add(uiParams, "useMxDbAlignedDimension").name("尺寸标注")
+    draw.add(uiParams, "useMxDbLeadComment").name("引线文字标注")
+    draw.add(uiParams, "useMxDbLeadTag").name("引出标注")
+    draw.add(uiParams, "useMxDbRectBoxLeadComment").name("引线审图标注")
+    draw.add(uiParams, "useCustomAnnotations").name("自定义标注")
+
+
+
+    brush.addColor(brushProps, "color").name("color颜色")
+    brush.add(brushProps, "dLineWidth", 1, 10, 1).name("线段宽度")
+
+
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+</body>
+
+
+</html>

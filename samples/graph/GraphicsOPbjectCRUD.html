@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphicsOPbjectCRUD 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.es5.js"
+    import GUI from "../lil-gui.module.js"
+    Mx.loadCoreCode().then(() => {
+        // 配置 鼠标点击图形 自定选中该图形对象
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            cadFile: "../../demo/buf/$hhhh.dwg",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+
+
+
+        // 获取当前控件对象
+        const draw = Mx.MxFun.getCurrentDraw()
+        const getPoint = new Mx.MrxDbgUiPrPoint()
+
+        // 记录选中的图形对象id
+        let ids = []
+
+        // 也可以通过事件监听的方式获取当前已选中的图形对象ID列表
+        draw.addEvent("MxEntitySelectChange", (aryId) => {
+            ids = aryId
+        })
+
+
+
+
+
+        // GUI
+        const gui = new GUI();
+        function random(lower, upper) {
+            return Math.floor(Math.random() * (upper - lower)) + lower;
+        }
+        function randomColor() {
+            // 随机生成 rgb 值，每个颜色值在 0 - 255 之间
+            const r = random(0, 256),
+                g = random(0, 256),
+                b = random(0, 256);
+            const color = new THREE.Color(`rgb(${r}, ${g}, ${b})`)
+            // 返回结果
+            return color
+        }
+        function readomPonit() {
+            return new THREE.Vector3(random(0, 120000), random(0, 120000), 0)
+        }
+    
+        const params = {
+            num: 100,
+
+            // 删除选中
+            remove() {
+                ids.forEach((id) => {
+                    draw.getMxEntity(id)?.erase()
+                })
+                Mx.MxFun.updateDisplay()
+            },
+            move() {
+                draw.clearMxCurrentSelect()
+                getPoint.go()
+                Mx.MxFun.addWindowsEvent(() => {
+                    const pt = getPoint.value()
+                    const objs = draw.findMxEntityAtPoint(pt)
+                    if (objs.length > 0) {
+                        objs[0].setColor(randomColor())
+                        objs[0].setNeedUpdateDisplay(true)
+                    }
+
+                })
+            },
+            selecte() {
+                getPoint.goWhile(()=> {
+                    draw.clearMxCurrentSelect()
+                    const pt = getPoint.value()
+                    const objs = draw.findMxEntityAtPoint(pt)
+                    if (objs.length > 0) {
+                        draw.addMxCurrentSelect(objs[0].objectId())
+                        objs[0].setNeedUpdateDisplay(true)
+                    }
+                })
+            }
+        }
+        function readerLines(num) {
+            for (let i = 0; i < num; i++) {
+                // 实例化线段对象line
+                let line = new Mx.MxDbLine();
+                // 设置第一个点位置
+                line.setPoint1(readomPonit());
+                // 设置第二个点位置
+                line.setPoint2(readomPonit());
+
+                line.setColor(randomColor())
+                // 添加对象渲染到场景中
+                draw.addMxEntity(line)
+            }
+            Mx.MxFun.updateDisplay()
+        }
+        readerLines(params.num)
+        gui.add(params, 'num', 0, 300, 1).name('生成线段数量').onFinishChange((num) => {
+            draw.getAllMxEntity().forEach((obj) => {
+                obj?.erase()
+            })
+            readerLines(num)
+        })
+        gui.add(params, 'remove').name('remove 删除已选择线条')
+        gui.add(params, 'move').name('move 鼠标移动改变线条颜色')
+        gui.add(params, 'selecte').name('selecte 鼠标点击选择线段')
+
+
+    })
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>
