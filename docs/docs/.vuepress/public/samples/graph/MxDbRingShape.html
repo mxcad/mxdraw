@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbRingShape 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+    
+    export async function BR_MxDbRingShape() {
+
+        const getPoint = new Mx.MrxDbgUiPrPoint()
+        const mxObj = Mx.MxFun.getCurrentDraw();
+        // 创建环形实例
+        const obj = new Mx.MxDbRingShape()
+        // 设置环形圆心
+        obj.center = await getPoint.go() || new THREE.Vector3()
+        getPoint.setUserDraw((currentPoint, worldDraw) => {
+            obj.innerRadius = currentPoint
+            worldDraw.drawCircle(obj.center, obj.center.distanceTo(currentPoint))
+        })
+        // 设置环形内半径
+        const innerPoint = await getPoint.go() || new THREE.Vector3
+        obj.innerRadius = obj.center.distanceTo(innerPoint)
+        getPoint.setUserDraw((currentPoint, worldDraw) => {
+            obj.outerRadius = obj.center.distanceTo(currentPoint)
+            worldDraw.drawCustomEntity(obj)
+        })
+        // 设置环形外半径
+        const outerPoint = await getPoint.go() || new THREE.Vector3
+        obj.outerRadius = obj.center.distanceTo(outerPoint)
+        mxObj.addMxEntity(obj)
+
+        addShapeGui(obj, [{
+            name: 'outerRadius',
+            label: 'outerRadius环形外半径',
+            box: { min: 0, max: 10000 }
+        }, {
+            name: 'innerRadius',
+            label: 'innerRadius环形内半径',
+            box: { min: 0, max: 10000 }
+        }
+        ])
+    }
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const obj = new Mx.MxDbRingShape()
+        obj.center = new THREE.Vector3(0,0,0);
+        obj.innerRadius = 10;
+        obj.outerRadius = 20;
+        Mx.MxFun.getCurrentDraw().addMxEntity(obj)
+    })
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> BR_MxDbRingShape()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制环形')
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

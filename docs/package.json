@@ -1,0 +1,24 @@
+{
+  "name": "mxdraw_docs",
+  "version": "1.0.0",
+  "description": "maxdraw docs",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "docs:dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider vuepress dev docs",
+    "docs:build": "cross-env NODE_OPTIONS=--openssl-legacy-provider vuepress build docs"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "moment": "^2.29.3",
+    "patch-package": "^6.4.7",
+    "postinstall-postinstall": "^2.1.0",
+    "vuepress": "^1.9.7",
+    "vuepress-plugin-nuggets-style-copy": "^1.0.3",
+    "vuepress-plugin-sitemap": "^2.3.1",
+    "vuepress-theme-reco": "^1.6.11"
+  },
+  "dependencies": {
+    "mxdraw": "^0.1.7"
+  }
+}

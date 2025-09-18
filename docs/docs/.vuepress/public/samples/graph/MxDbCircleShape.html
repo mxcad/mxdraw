@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbCircleShape 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+
+    /*** 绘制圆形 */
+    export async function BR_MxDbCircle() {
+        const getPoint = new Mx.MrxDbgUiPrPoint()
+        const mxObj = Mx.MxFun.getCurrentDraw();
+        // 创建环形实例
+        const obj = new Mx.MxDbCircleShape()
+        // 设置圆心
+        obj.center = await getPoint.go() || new THREE.Vector3()
+        getPoint.setUserDraw((currentPoint, worldDraw) => {
+            obj.innerRadius = currentPoint
+            worldDraw.drawCircle(obj.center, obj.center.distanceTo(currentPoint))
+        })
+        // 设置圆形半径
+        const pt = await getPoint.go() || new THREE.Vector3
+        obj.xRadius = obj.yRadius = obj.center.distanceTo(pt)
+        obj.isClosedToCenter = false
+        mxObj.addMxEntity(obj)
+        
+        addShapeGui(obj);
+    }
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const obj = new Mx.MxDbCircleShape()
+        obj.center = new THREE.Vector3(0, 0, 0)
+        obj.xRadius = obj.yRadius = 20
+        obj.isClosedToCenter = false
+        Mx.MxFun.getCurrentDraw().addMxEntity(obj)
+    })
+
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> BR_MxDbCircle()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制圆形')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

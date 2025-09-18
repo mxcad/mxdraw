@@ -1,0 +1,95 @@
+<!--
+ * @Author: WuDeXiong
+ * @Date: 2022-05-05 10:46:53
+ * @LastEditors: OBKoro1
+ * @LastEditTime: 2022-05-05 11:13:21
+ * @FilePath: \mxdraw_docs\docs\.vuepress\public\samples\graph\MxDbArea.html
+ * @Description: 
+ * 
+ * Copyright (c) 2022 by WuDeXiong, All Rights Reserved. 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbArea 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+                mxDrawObject.on("openFileComplete", (iRet) => {
+                    const area = new Mx.MxDbArea();
+                    area.points = [new THREE.Vector3(-15, -10, 0), new THREE.Vector3(0, 10, 0)]
+                    // const tmp = area.clone()
+                    area.addPoint(new THREE.Vector3(15, 5, 0))
+                    mxDrawObject.addMxEntity(area);
+                });
+            },
+        });
+    })
+
+    function draw_area() {
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        // 实例化多边形对象area
+        const area = new Mx.MxDbArea();
+        // 鼠标第一次点击
+        getPoint.goWhile((status) => {
+            if (status !== Mx.MrxDbgUiPrBaseReturn.kOk) {
+                return
+            }
+            // 添加顶点坐标
+            area.addPoint(getPoint.value())
+            // 只需要设置一次动态绘制
+            if (area.getPoints().length === 1) {
+                getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                    // 克隆多边形对象
+                    const tmp = area.clone()
+                    // 添加顶点
+                    tmp.addPoint(currentPoint)
+                    // 动态绘制该克隆对象实现动态绘制的动画效果
+                    worldDrawComment.drawCustomEntity(tmp);
+                });
+            }
+        }, () => {
+            // 获取控件对象并将多边形area添加到画布中
+            Mx.MxFun.getCurrentDraw().addMxEntity(area);
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_area()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制多边形')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>
