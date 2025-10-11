@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbPolyline 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const poly_line = new Mx.MxDbPolyline();
+        poly_line.addVertexAt(new THREE.Vector3(-20,0,0));
+        poly_line.addVertexAt(new THREE.Vector3(-10,-10,0));
+        poly_line.addVertexAt(new THREE.Vector3(0,0,0));
+        poly_line.addVertexAt(new THREE.Vector3(10,5,0));
+        Mx.MxFun.getCurrentDraw().addMxEntity(poly_line);
+    })
+    async function draw_polyLine() {
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        const poly_line = new Mx.MxDbPolyline();
+        getPoint.goWhile((status) => {
+            if (status != 0) return
+            poly_line.addVertexAt(getPoint.value());
+            if (poly_line.points.length === 1) {
+                getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                    let pl = poly_line.clone();
+                    pl.addVertexAt(currentPoint);
+                    worldDrawComment.drawCustomEntity(pl);
+                })
+            }
+        }, () => {
+            Mx.MxFun.getCurrentDraw().addMxEntity(poly_line);
+        })
+    }
+    // GUI
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> draw_polyLine()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制多义线')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

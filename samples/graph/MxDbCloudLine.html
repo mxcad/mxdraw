@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbCloudLine 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        let line = new Mx.MxDbCloudLine();
+        // 设置云线圆弧的半径
+        line.setRadius(Mx.MxFun.screenCoordLong2Doc(10))
+        for(let i = 0;i<10;i++){
+            line.addPoint(new THREE.Vector3(-10+5*i, 0, 0));
+        }
+        Mx.MxFun.getCurrentDraw().addMxEntity(line);
+    })
+
+    function draw_cloudLine() {
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+
+        // 鼠标点击
+        getPoint.go(async (status) => {
+            if (status != Mx.MrxDbgUiPrBaseReturn.kOk) {
+                return
+            }
+            let line = new Mx.MxDbCloudLine();
+            line.addPoint(getPoint.value());
+            // 设置云线圆弧的半径
+            line.setRadius(Mx.MxFun.screenCoordLong2Doc(10))
+
+            // 设置动态绘制回调函数
+            getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                // 将当前的顶点位置push添加到顶点数组中
+                line.addPoint(currentPoint);
+                // 绘制线段对象
+                worldDrawComment.drawCustomEntity(line);
+            });
+            // 鼠标第二次点击
+            const pt2 = await getPoint.go()
+            if(!pt2) return
+            line.addPoint(pt2);
+            Mx.MxFun.getCurrentDraw().addMxEntity(line);
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_cloudLine()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制云线')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

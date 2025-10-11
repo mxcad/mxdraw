@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mx3PointArc 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const vertices = new Float32Array([
+            0, 10, 0, // 顶点1（上）
+            -10, -10, 0, // 顶点2（左下）
+            10, -10, 0 // 顶点3（右下）
+        ]);
+
+        // 创建BufferGeometry对象
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+        // 创建材质
+        const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+        // 创建网格
+        const mesh = new THREE.Mesh(geometry, material);
+        Mx.MxFun.getCurrentDraw().addObject(mesh);
+        draw_twinkle(new THREE.Vector3(-24, 17, 0) )
+    });
+    async function draw_react() {
+        // 交互取点
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        getPoint.setMessage("\n 设置矩形位置:");
+        let ptVal = await getPoint.go();
+        if (ptVal == null) {
+            return;
+        }
+        // 创建几何体(长10，宽10的矩形)
+        const geometry = new THREE.BoxGeometry(10, 10, 10);
+        // 创建材质
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })//绿色
+        // 创建网格
+        const cube = new THREE.Mesh(geometry, material);
+        // 设置矩形位置
+        cube.position.set(ptVal.x, ptVal.y, ptVal.z);
+        // 也可以通过参数设置直接确定cube的位置
+        // cube.position.set(0,0,0)
+        Mx.MxFun.getCurrentDraw().addObject(cube);
+    }
+
+    async function draw_arrow() {
+        // 设置箭头的起点
+        const getPt1 = new Mx.MrxDbgUiPrPoint();
+        getPt1.setMessage("\n 设置箭头的起点:");
+        let pt1 = await getPt1.go();
+        if (pt1 == null) {
+            return;
+        }
+
+        // 设置箭头的终点
+        const getPt2 = new Mx.MrxDbgUiPrPoint();
+        getPt2.setMessage("\n 设置箭头的终点:");
+        getPt2.setUserDraw((pt, pw) => {
+            if (pt1 !== null) {
+                pw.drawLine(pt1, pt)
+            }
+        })
+        let pt2 = await getPt2.go();
+        if (pt2 == null) {
+            return;
+        }
+        // 创建平面箭头的起点和终点坐标
+        const origin = pt1;
+        const XWeeks = new THREE.Vector3(1, 0, 0);
+        // 创建箭头的起点和终点
+        const arrow = new THREE.ArrowHelper(
+            XWeeks, // 箭头方向
+            origin.clone(), // 起点
+            pt1.distanceTo(pt2), // 箭头长度
+            0xff0000 // 箭头颜色
+        );
+
+        // 计算箭头旋转角度
+        const vec = pt2.clone().sub(pt1);
+        let angle = vec.angleTo(XWeeks);
+        if (pt2.y < pt1.y) {
+            angle = -angle;
+        };
+        arrow.rotateOnAxis(new THREE.Vector3(0, 0, 1), angle)
+        Mx.MxFun.getCurrentDraw().addObject(arrow)
+    }
+
+    async function draw_twinkle(point) {
+
+        // 获取当前mxobj对象
+        let mxobj = Mx.MxFun.getCurrentDraw();
+        let pt;
+        if (!point) {
+            // 设置svg插入点
+            const getPoint = new Mx.MrxDbgUiPrPoint();
+            getPoint.setMessage("\n点取插入位置:");
+            pt = await getPoint.go();
+            if (!pt) return;
+        }else{
+            pt = point.clone();
+        }
+        // 设置svg缩放因子
+        let dScale = Mx.MxFun.screenCoordLong2Doc(100);
+        // 设置svg初始颜色
+        let color = new THREE.Color(0xff4e95); //修改加载svg模型的颜色，undefined则默认svg本身颜色
+
+        // 加载SVG
+        Mx.MxThreeJS.loadSVG(
+            '../../svg/mark.svg',
+            color,
+            (obj, meterials) => {
+                if (obj) {
+                    obj.scale.multiplyScalar(dScale / 1000);
+                    obj.position.x = pt.x;
+                    obj.position.y = pt.y;
+                    obj.scale.y *= -1;
+                    obj.renderOrder = 12000;
+                    mxobj.addObject(obj, true);
+                    // 启动一个时钟，随机修改模型材质的颜色实现闪烁效果
+                    setInterval(() => {
+                        // 设置随机颜色
+                        const color = 0xffffff * Math.random();
+                        meterials.forEach(item => { item.color.set(color) });
+                        mxobj.updateDisplay();
+                    }, 500);
+                }
+            }
+        );
+    }
+    const gui = new GUI();
+    const myObject1 = {
+        executeTheCommand: () => draw_react()
+    }
+    const myObject2 = {
+        executeTheCommand: () => draw_arrow()
+    }
+    const myObject3 = {
+        executeTheCommand: () => draw_twinkle()
+    }
+    gui.add(myObject1, 'executeTheCommand').name('绘制矩形');
+    gui.add(myObject2, 'executeTheCommand').name('绘制箭头');
+    gui.add(myObject3, 'executeTheCommand').name('闪烁');
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>
