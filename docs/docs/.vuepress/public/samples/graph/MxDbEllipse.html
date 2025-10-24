@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbEllipse 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+    
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const ellipse = new Mx.MxDbEllipse()
+        ellipse.point1 = new THREE.Vector3(-20,-10,0)
+        ellipse.point2 = new THREE.Vector3(10,10,0)
+        Mx.MxFun.getCurrentDraw().addMxEntity(ellipse)
+    })
+
+    function draw_ellipse(){
+        const point = new Mx.MrxDbgUiPrPoint()
+        const ellipse = new Mx.MxDbEllipse()
+
+        point.go(async (status)=> {
+            if(status === Mx.MrxDbgUiPrBaseReturn.kOk) {
+                ellipse.point1 = point.value()
+                
+                point.setUserDraw((currentPoint, worldDraw)=> {
+                    ellipse.point2 = currentPoint
+                    worldDraw.drawCustomEntity(ellipse)
+                })
+            }
+            // 获取下一次鼠标点击的位置
+            const pt2 = await point.go()
+            if(!pt2) return
+            ellipse.point2 = pt2
+            const mxDraw = Mx.MxFun.getCurrentDraw()
+            mxDraw.addMxEntity(ellipse)
+            addEllipseShapeGui(ellipse)
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> draw_ellipse()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制椭圆')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

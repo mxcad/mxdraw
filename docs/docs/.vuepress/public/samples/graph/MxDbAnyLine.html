@@ -1,0 +1,83 @@
+<!--
+ * @Author: WuDeXiong
+ * @Date: 2022-05-05 10:05:27
+ * @LastEditors: OBKoro1
+ * @LastEditTime: 2022-05-05 10:08:20
+ * @FilePath: \mxdraw_docs\docs\.vuepress\public\samples\graph\MxDbAnyLine.html
+ * @Description: 
+ * 
+ * Copyright (c) 2022 by WuDeXiong, All Rights Reserved. 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbLine 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        let line = new Mx.MxDbAnyLine();
+        line.points.push(new THREE.Vector3(-10,-10,0));
+        line.points.push(new THREE.Vector3(10,10,0));
+        Mx.MxFun.getCurrentDraw().addMxEntity(line);
+    })
+
+    function draw_anyLine() {
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        // 鼠标点击
+        getPoint.go(async (status) => {
+            if (status !== Mx.MrxDbgUiPrBaseReturn.kOk) {
+                return
+            }
+            let line = new Mx.MxDbAnyLine();
+            line.points.push(getPoint.value());
+
+            // 设置动态绘制回调函数
+            getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                // 将当前的顶点位置push添加到顶点数组中
+                line.points.push(currentPoint.clone());
+                // 绘制线段对象
+                worldDrawComment.drawCustomEntity(line);
+            });
+            const pt = await getPoint.go()
+            if(!pt) return;
+            line.points.push(pt);
+            Mx.MxFun.getCurrentDraw().addMxEntity(line);
+        })
+    }
+    // GUI
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_anyLine()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制任意线段')
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>
