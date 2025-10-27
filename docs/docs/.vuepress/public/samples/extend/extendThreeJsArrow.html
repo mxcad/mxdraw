@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mx3PointArc 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+
+        draw_arrow(1)
+    });
+    async function draw_arrow(num) {
+        let pt1, pt2
+        if (num === 1) {
+            pt1 = new THREE.Vector3(-10, -10, 0);
+            pt2 = new THREE.Vector3(10, 10, 0);
+        } else {
+            // 设置箭头的起点
+            const getPt1 = new Mx.MrxDbgUiPrPoint();
+            getPt1.setMessage("\n 设置箭头的起点:");
+            pt1 = await getPt1.go();
+            if (pt1 == null) {
+                return;
+            }
+
+            // 设置箭头的终点
+            const getPt2 = new Mx.MrxDbgUiPrPoint();
+            getPt2.setMessage("\n 设置箭头的终点:");
+            getPt2.setUserDraw((pt, pw) => {
+                if (pt1 !== null) {
+                    pw.drawLine(pt1, pt)
+                }
+            })
+            pt2 = await getPt2.go();
+            if (pt2 == null) {
+                return;
+            }
+        }
+
+        // 创建平面箭头的起点和终点坐标
+        const origin = pt1;
+        const XWeeks = new THREE.Vector3(1, 0, 0);
+        // 创建箭头的起点和终点
+        const arrow = new THREE.ArrowHelper(
+            XWeeks, // 箭头方向
+            origin.clone(), // 起点
+            pt1.distanceTo(pt2), // 箭头长度
+            0xff0000 // 箭头颜色
+        );
+
+        // 计算箭头旋转角度
+        const vec = pt2.clone().sub(pt1);
+        let angle = vec.angleTo(XWeeks);
+        if (pt2.y < pt1.y) {
+            angle = -angle;
+        };
+        arrow.rotateOnAxis(new THREE.Vector3(0, 0, 1), angle)
+        Mx.MxFun.getCurrentDraw().addObject(arrow)
+    }
+    const gui = new GUI();
+    const myObject2 = {
+        executeTheCommand: () => draw_arrow()
+    }
+    gui.add(myObject2, 'executeTheCommand').name('绘制箭头');
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

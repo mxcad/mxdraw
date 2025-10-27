@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mxdraw基础使用示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="https://unpkg.com/mxdraw/dist/mxdraw.umd.js"></script>
+</head>
+
+<script type="module">
+    Mx.loadCoreCode().then(() => {
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            cadFile: "../../demo/buf/hhhh.dwg",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+    })
+</script>
+
+<body>
+    <div style="height: 80vh; overflow: hidden;">
+        <canvas id="mxdraw"></canvas>
+    </div>
+</body>
+
+</html>

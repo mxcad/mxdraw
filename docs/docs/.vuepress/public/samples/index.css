@@ -1,0 +1,12 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.mxdiv {
+    width: 99%;
+    position: relative;
+    padding-top: 0;
+    height: 500px;
+}

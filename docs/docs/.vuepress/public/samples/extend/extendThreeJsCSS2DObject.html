@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS2DObject 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+    const { Matrix4,
+        Object3D,
+        Vector3 } = THREE
+    var CSS2DObject = function (element) {
+
+        Object3D.call(this);
+
+        this.element = element;
+        this.element.style.position = 'absolute';
+
+        this.addEventListener('removed', function () {
+
+            this.traverse(function (object) {
+
+                if (object.element instanceof Element && object.element.parentNode !== null) {
+
+                    object.element.parentNode.removeChild(object.element);
+
+                }
+
+            });
+
+        });
+
+    };
+
+    CSS2DObject.prototype = Object.create(Object3D.prototype);
+    CSS2DObject.prototype.constructor = CSS2DObject;
+
+    //
+
+    var CSS2DRenderer = function () {
+
+        var _this = this;
+
+        var _width, _height;
+        var _widthHalf, _heightHalf;
+
+        var vector = new Vector3();
+        var viewMatrix = new Matrix4();
+        var viewProjectionMatrix = new Matrix4();
+
+        var cache = {
+            objects: new WeakMap()
+        };
+
+        var domElement = document.createElement('div');
+        domElement.style.overflow = 'hidden';
+
+        this.domElement = domElement;
+
+        this.getSize = function () {
+
+            return {
+                width: _width,
+                height: _height
+            };
+
+        };
+
+        this.setSize = function (width, height) {
+
+            _width = width;
+            _height = height;
+
+            _widthHalf = _width / 2;
+            _heightHalf = _height / 2;
+
+            domElement.style.width = width + 'px';
+            domElement.style.height = height + 'px';
+
+        };
+
+        var renderObject = function (object, scene, camera) {
+
+            if (object instanceof CSS2DObject) {
+
+                object.onBeforeRender(_this, scene, camera);
+
+                vector.setFromMatrixPosition(object.matrixWorld);
+                vector.applyMatrix4(viewProjectionMatrix);
+
+                var element = object.element;
+                var style = 'translate(-50%,-50%) translate(' + (vector.x * _widthHalf + _widthHalf) + 'px,' + (- vector.y * _heightHalf + _heightHalf) + 'px)';
+
+                element.style.WebkitTransform = style;
+                element.style.MozTransform = style;
+                element.style.oTransform = style;
+                element.style.transform = style;
+
+                element.style.display = (object.visible && vector.z >= - 1 && vector.z <= 1) ? '' : 'none';
+
+                var objectData = {
+                    distanceToCameraSquared: getDistanceToSquared(camera, object)
+                };
+
+                cache.objects.set(object, objectData);
+
+                if (element.parentNode !== domElement) {
+
+                    domElement.appendChild(element);
+
+                }
+
+                object.onAfterRender(_this, scene, camera);
+
+            }
+
+            for (var i = 0, l = object.children.length; i < l; i++) {
+
+                renderObject(object.children[i], scene, camera);
+
+            }
+
+        };
+
+        var getDistanceToSquared = function () {
+
+            var a = new Vector3();
+            var b = new Vector3();
+
+            return function (object1, object2) {
+
+                a.setFromMatrixPosition(object1.matrixWorld);
+                b.setFromMatrixPosition(object2.matrixWorld);
+
+                return a.distanceToSquared(b);
+
+            };
+
+        }();
+
+        var filterAndFlatten = function (scene) {
+
+            var result = [];
+
+            scene.traverse(function (object) {
+
+                if (object instanceof CSS2DObject) result.push(object);
+
+            });
+
+            return result;
+
+        };
+
+        var zOrder = function (scene) {
+
+            var sorted = filterAndFlatten(scene).sort(function (a, b) {
+
+                var distanceA = cache.objects.get(a).distanceToCameraSquared;
+                var distanceB = cache.objects.get(b).distanceToCameraSquared;
+
+                return distanceA - distanceB;
+
+            });
+
+            var zMax = sorted.length;
+
+            for (var i = 0, l = sorted.length; i < l; i++) {
+
+                sorted[i].element.style.zIndex = zMax - i;
+
+            }
+
+        };
+
+        this.render = function (scene, camera) {
+
+            if (scene.autoUpdate === true) scene.updateMatrixWorld();
+            if (camera.parent === null) camera.updateMatrixWorld();
+
+            viewMatrix.copy(camera.matrixWorldInverse);
+            viewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, viewMatrix);
+
+            renderObject(scene, scene, camera);
+            zOrder(scene);
+
+        };
+
+    };
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+            },
+        });
+        
+        drawCSS2DObject()
+        const mxdraw = Mx.MxFun.getCurrentDraw()
+        let line = new Mx.MxDbLine()
+        line.pt1 = new THREE.Vector3(0, 0, 0)
+        line.pt1 = new THREE.Vector3(10, 10, 0)
+
+        mxdraw.addMxEntity(line)
+    });
+    function drawCSS2DObject() {
+
+        const mxdraw = Mx.MxFun.getCurrentDraw()
+        const scene = mxdraw.getScene()
+        const canvas = document.createElement("canvas")
+        canvas.width = 20
+        canvas.height = 20
+        canvas.style.width = "20px"
+        canvas.style.height = "20px"
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.beginPath();
+            ctx.arc(10, 10, 10, 0, Math.PI * 2); // 圆心在 (100, 100)，半径为 50
+            ctx.fillStyle = 'red'; // 设置填充色为红色
+            ctx.fill(); // 填充圆形
+        }
+        // THREE
+        const obj = new CSS2DObject(canvas)
+        obj.position.copy(new THREE.Vector3(5, 5, 0))
+        const oCanvas = mxdraw.getCanvas()
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(oCanvas.clientWidth, oCanvas.clientHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0';
+        labelRenderer.domElement.style.left = '0';
+
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        mxdraw.addObject(obj);
+
+        const camera = mxdraw.getCamera()
+        const render = () => {
+            labelRenderer.render(scene, camera)
+            window.requestAnimationFrame(() => render());
+        }
+        render()
+    }
+   
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>
