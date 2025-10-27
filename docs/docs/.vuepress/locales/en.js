@@ -28,12 +28,11 @@ const enConfig = {
                 }
             ]
         },
-        { text: 'Home page', link: '/' },
+        { text: 'Home page', link: '../../en/start/abstract' },
         {
             text: 'Official website',
             items: [
-                { text: 'CAD dream drawing', link: 'https://www.mxdraw3d.com/' },
-                { text: 'Dream CAD drawing plug-in', link: 'https://www.mxdraw.com/' }
+                { text: 'WEB CAD SDK', link: 'https://www.webcadsdk.com/' },
             ]
         },
         {
