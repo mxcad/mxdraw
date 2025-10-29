@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbCircleArc 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+    /*** 绘制圆弧形状 */
+    export function BR_MxDbCircleArc() {
+
+        const getPoint = new Mx.MrxDbgUiPrPoint()
+        const mxObj = Mx.MxFun.getCurrentDraw();
+        const draw = new Mx.McEdGetPointWorldDrawObject()
+        let obj = new Mx.MxDbCircleArc()
+        obj.stroke = "#ff0000"
+        getPoint.setUserDraw(draw)
+        getPoint.setMessage("\n确定圆弧中点:");
+        getPoint.go(async () => {
+
+            // 第一个点确定圆心
+            obj.center = getPoint.value()
+            // 第二个点确定半径和开始角
+            draw.setDraw((v) => {
+                draw.drawLine(obj.center, v)
+            })
+            getPoint.setMessage("\n确定圆弧开始点:");
+            obj.startPoint = await getPoint.go() || new THREE.Vector3()
+            draw.setDraw((v) => {
+                obj.endPoint = v
+                draw.drawCustomEntity(obj)
+            })
+            getPoint.setMessage("\n确定圆弧结束点:");
+            // 第三个点确定结束角
+            obj.endPoint = await getPoint.go() || new THREE.Vector3()
+            draw.setDraw(()=> {});
+            obj.closed = false;
+            mxObj.addMxEntity(obj);
+            
+            addEllipseShapeGui(obj);
+        })
+    }
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+             
+            },
+        });
+        let obj = new Mx.MxDbCircleArc()
+        obj.center = new THREE.Vector3(0,0,0)
+        obj.startPoint = new THREE.Vector3(10,0,0)
+        obj.endPoint = new THREE.Vector3(-10,0,0)
+        obj.closed = false
+        Mx.MxFun.getCurrentDraw().addMxEntity(obj);
+    })
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> BR_MxDbCircleArc()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制圆弧')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

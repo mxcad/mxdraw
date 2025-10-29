@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mx3PointArc 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addEllipseShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const vertices = new Float32Array([
+            0, 10, 0, // 顶点1（上）
+            -10, -10, 0, // 顶点2（左下）
+            10, -10, 0 // 顶点3（右下）
+        ]);
+
+        // 创建BufferGeometry对象
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+        // 创建材质
+        const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+        // 创建网格
+        const mesh = new THREE.Mesh(geometry, material);
+        Mx.MxFun.getCurrentDraw().addObject(mesh);
+    });
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

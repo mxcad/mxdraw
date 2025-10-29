@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbLeadComment 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        let leadComment = new Mx.MxDbLeadComment();
+        // 设置标志点
+        leadComment.point1 = new THREE.Vector3(-10,-5,0)
+        leadComment.point2 = new THREE.Vector3(10,5,0)
+        leadComment.textHeight = Mx.MxFun.screenCoordLong2Doc(20)
+        leadComment.text = "文字标注"
+        Mx.MxFun.getCurrentDraw().addMxEntity(leadComment);
+    })
+    function draw_leadComment() {
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+
+        getPoint.go(async (status) => {
+            if (status !== Mx.MrxDbgUiPrBaseReturn.kOk) {
+                return
+            }
+            let leadComment = new Mx.MxDbLeadComment();
+            // 设置标志点
+            leadComment.point1 = getPoint.value()
+            leadComment.text = "文字标注"
+            leadComment.textHeight = Mx.MxFun.screenCoordLong2Doc(20)
+
+            getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                // 标注的文字所在位置
+                leadComment.point2 = currentPoint
+                worldDrawComment.drawCustomEntity(leadComment);
+            });
+            leadComment.point2 = await getPoint.go() || new THREE.Vector3()
+            Mx.MxFun.getCurrentDraw().addMxEntity(leadComment);
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_leadComment()
+    }
+    gui.add(myObject, 'executeTheCommand').name('引线文字标注')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

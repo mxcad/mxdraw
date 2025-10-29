@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbArrow 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script src="../three.js"></script>
+</head>
+
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import { addShapeGui } from "../addShapeGui.js"
+    import GUI from "../lil-gui.module.js"
+
+    export function getScreenPixel(pixel, isFontSize) {
+        let _pixel = Mx.MxFun.screenCoordLong2World(isFontSize ? pixel : pixel - pixel / 3)
+        _pixel = Mx.MxFun.worldCoordLong2Doc(_pixel)
+        return _pixel
+    }
+    export function BR_Arrow() {
+        const worldDraw = new Mx.McEdGetPointWorldDrawObject()
+        const lines = new Mx.MxDbArrow()
+        const mxDraw = Mx.MxFun.getCurrentDraw();
+        const point = new Mx.MrxDbgUiPrPoint();
+        point.setUserDraw(worldDraw)
+        lines.setLineWidth(10)
+
+        point.go(() => {
+            lines.innerOffset = getScreenPixel(10)
+            lines.outerOffset = getScreenPixel(22)
+            lines.topOffset = getScreenPixel(36)
+            lines.startPoint = point.value()
+            worldDraw.setDraw((v) => {
+                lines.endPoint = v
+                worldDraw.drawCustomEntity(lines)
+            })
+            point.go(async (status) => {
+                lines.endPoint = point.value()
+
+                mxDraw.addMxEntity(lines)
+                addShapeGui(lines, [
+                    {
+                        name: "topOffset",
+                        label: "topOffset箭头顶部偏移量",
+                        box: {
+                            min: 0,
+                            max: 10000
+                        }
+                    },
+                    {
+                        name: "innerOffset",
+                        label: "innerOffset箭头内部部偏移量",
+                        box: {
+                            min: 0,
+                            max: 10000
+                        }
+                    },
+                    {
+                        name: "outerOffset",
+                        label: "outerOffset箭头外部偏移量",
+                        box: {
+                            min: 0,
+                            max: 10000
+                        }
+                    }
+                ])
+            })
+        })
+    }
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        const lines = new Mx.MxDbArrow()
+        lines.setLineWidth(10)
+        lines.startPoint = new THREE.Vector3(-10,-10,0)
+        lines.innerOffset = getScreenPixel(10)
+        lines.outerOffset = getScreenPixel(22)
+        lines.topOffset = getScreenPixel(36)
+        lines.endPoint = new THREE.Vector3(10,10,0)
+        Mx.MxFun.getCurrentDraw().addMxEntity(lines)
+    })
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => BR_Arrow()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制箭头')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

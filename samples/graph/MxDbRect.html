@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbRect 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        let rect = new Mx.MxDbRect();
+        rect.pt1 = new THREE.Vector3(-10,10,0)
+        rect.pt2 = new THREE.Vector3(10,-10,0)
+        rect.setColor(0xFF22)
+        Mx.MxFun.getCurrentDraw().addMxEntity(rect);
+    })
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand : ()=> draw_rect()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制矩形')
+    function draw_rect() {
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+
+        // 鼠标第一次点击
+        getPoint.go(async (status) => {
+            if (status !== Mx.MrxDbgUiPrBaseReturn.kOk) {
+                return
+            }
+            // 当前鼠标位置
+            const pt1 = getPoint.value()
+            // 实例化矩形对象rect
+            let rect = new Mx.MxDbRect();
+            // 设置第一个点位置
+            rect.pt1 = pt1
+            // 设置颜色
+            rect.setColor(0xFF22);
+
+            // 设置动态绘制回调函数
+            getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                // 设置线段第二个点位置
+                rect.pt2 = currentPoint;
+                // 绘制矩形对象rect
+                worldDrawComment.drawCustomEntity(rect);
+            })
+            // 鼠标第二次点击
+            const pt2 = await getPoint.go();
+            if(!pt2) return;
+            rect.pt2 = pt2
+            Mx.MxFun.getCurrentDraw().addMxEntity(rect);
+        })
+    }
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

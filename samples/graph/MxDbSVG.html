@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbSVG 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            // cadFile: "../../demo/buf/$hhhh.dwg",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+            },
+        });
+        let svg = new Mx.MxDbSVG()
+        let svgSrc = "https://img.alicdn.com/imgextra/i2/O1CN01FF1t1g1Q3PDWpSm4b_!!6000000001920-55-tps-508-135.svg"
+        svg.setSvgPath(svgSrc)
+        svg.setSvgPostion(new THREE.Vector3(0, 0, 0))
+        svg.svgReverse = true
+        svg.svgMargin.x = 0.2
+
+        // 默认插入基点，在图片的左下角，通过来设置新的插入基点。
+        svg.setSvgAlignmentRatio(new THREE.Vector2(0.5, -1))
+
+        svg.setRenderOrder(100)
+        let iSize = 500
+        svg.setSvgSize(new THREE.Vector2(iSize, 0))
+
+        svg.fixedSize = true
+        svg.color = 0x00ff11
+        Mx.MxFun.getCurrentDraw().addMxEntity(svg)
+    })
+
+    function draw_SVG() {
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+
+        // 鼠标第一次点击
+        getPoint.go((status) => {
+            if (status != 0) {
+                return
+            }
+
+            // 当前鼠标位置
+            const pt1 = getPoint.value()
+            let svg = new Mx.MxDbSVG()
+            let svgSrc = "../../svg/target.svg"
+            svg.setSvgPath(svgSrc)
+            svg.setSvgPostion(new THREE.Vector3(pt1.x, pt1.y, pt1.z))
+            svg.svgReverse = true
+            svg.svgMargin.x = 0.2
+
+            // 默认插入基点，在图片的左下角，通过来设置新的插入基点。
+            svg.setSvgAlignmentRatio(new THREE.Vector2(0.5, -1))
+
+            svg.setRenderOrder(100)
+            let iSize = 50
+            svg.setSvgSize(new THREE.Vector2(iSize, 0))
+
+            svg.fixedSize = true
+            svg.color = 0x00ff11
+            Mx.MxFun.getCurrentDraw().addMxEntity(svg)
+
+
+            // GUI
+            const gui = new GUI();
+            const params = {
+                setSvgPostion: {
+                    x: pt1.x,
+                    y: pt1.y,
+                    z: pt1.z
+                },
+                setSvgPath: "../../svg/target.svg",
+                setSvgSize: {
+                    width: 20000,
+                    height: 30000
+                },
+                setSvgAlignmentRatio: {
+                    x: 0,
+                    y: 0
+                },
+            }
+            const setSvgPostion = gui.addFolder('setSvgPostion')
+            const x = params.setSvgPostion.x
+            const y = params.setSvgPostion.y
+            const z = params.setSvgPostion.z
+            setSvgPostion.add(params.setSvgPostion, 'x').onChange(v => { svg.setSvgPostion(new THREE.Vector3(v, y, z)); svg.setNeedUpdateDisplay(true) })
+            setSvgPostion.add(params.setSvgPostion, 'y').onChange(v => { svg.setSvgPostion(new THREE.Vector3(x, v, z)); svg.setNeedUpdateDisplay(true) })
+            setSvgPostion.add(params.setSvgPostion, 'z').onChange(v => { svg.setSvgPostion(new THREE.Vector3(x, y, v)); svg.setNeedUpdateDisplay(true) })
+
+            const setSvgAlignmentRatio = gui.addFolder('setSvgAlignmentRatio')
+            setSvgAlignmentRatio.add(params.setSvgAlignmentRatio, 'x', -1, 1).onChange(v => { svg.setSvgAlignmentRatio(new THREE.Vector2(v, params.setSvgAlignmentRatio.y)); svg.setNeedUpdateDisplay(true) })
+            setSvgAlignmentRatio.add(params.setSvgAlignmentRatio, 'y', -1, 1).onChange(v => { svg.setSvgAlignmentRatio(new THREE.Vector2(params.setSvgAlignmentRatio.x, v)); svg.setNeedUpdateDisplay(true) })
+
+            gui.add(params, 'setSvgPath', ['../../svg/target.svg', '../../svg/mark.svg']).onChange((src) => {
+                svg.setSvgPath(src)
+                svg.setNeedUpdateDisplay(true)
+            })
+            const setSvgSize = gui.addFolder('setSvgSize')
+            setSvgSize.add(params.setSvgSize, 'width').onChange(x => { svg.setSvgSize(new THREE.Vector2(x, params.setSvgSize.height)); svg.setNeedUpdateDisplay(true) })
+            setSvgSize.add(params.setSvgSize, 'height').onChange(y => { svg.setSvgSize(new THREE.Vector2(params.setSvgSize.width, y)); svg.setNeedUpdateDisplay(true) })
+            gui.addColor(svg, 'color').onChange((color) => {
+                svg.setColor(color)
+            })
+            gui.onFinishChange((event) => {
+                svg.setNeedUpdateDisplay(true)
+            })
+
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_SVG()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制SVG图')
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbRegularPolygon 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.esm.js"
+    import GUI from "../lil-gui.module.js"
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxdraw", // canvas元素的id
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        let regularPolygon = new Mx.MxDbRegularPolygon();
+        // 设置多边形边的中心点
+        regularPolygon.centerPoint = new THREE.Vector3(0, 0, 0);
+        // 设置多边形边的数量
+        regularPolygon.sidesNumber = 6
+        regularPolygon.otherPoint = new THREE.Vector3(20, 0, 0);
+        Mx.MxFun.getCurrentDraw().addMxEntity(regularPolygon);
+    })
+    function draw_regularArea() {
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        // 鼠标点击
+        getPoint.go(async (status) => {
+            if (status != 0) {
+                return
+            }
+            let regularPolygon = new Mx.MxDbRegularPolygon();
+            // 设置多边形边的中心点
+            regularPolygon.centerPoint = getPoint.value()
+            // 设置多边形边的数量
+            regularPolygon.sidesNumber = 6
+
+            getPoint.setUserDraw((currentPoint, worldDrawComment) => {
+                // 设置多边形两条边相连的点
+                regularPolygon.otherPoint = currentPoint
+                worldDrawComment.drawCustomEntity(regularPolygon);
+            });
+            const pt = await getPoint.go()
+            if(!pt) return
+            regularPolygon.otherPoint = pt
+            Mx.MxFun.getCurrentDraw().addMxEntity(regularPolygon);
+        })
+    }
+    const gui = new GUI();
+    const myObject = {
+        executeTheCommand: () => draw_regularArea()
+    }
+    gui.add(myObject, 'executeTheCommand').name('绘制正多边形')
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxdraw"></canvas>
+    </div>
+
+</body>
+
+
+</html>

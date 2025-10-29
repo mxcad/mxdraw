@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbEntity 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.es5.js"
+    import GUI from "../lil-gui.module.js"
+
+    // 创建任意线的three.js线段对象
+    function createAnyLine(points) {
+        const curve = new THREE.CatmullRomCurve3(points, false,  "chordal"); 
+        points = curve.getPoints( 50 )
+        const geometry = new THREE.BufferGeometry()
+        const divisions = Math.round( 12 * points.length );
+        let point = new THREE.Vector3();
+        const positions =[]
+        const colors = []
+        const color = new THREE.Color("#ff0000");
+        for ( let i = 0, l = divisions; i < l; i ++ ) { 
+            const t = i / l;
+            point = curve.getPoint( t );
+            positions.push( point.x, point.y, point.z );
+            colors.push( color.r, color.g, color.b );
+        }
+        geometry.setAttribute( 'position',new THREE.Float32BufferAttribute( positions, 3 ) );
+        geometry.setAttribute( 'color',new THREE.Float32BufferAttribute( colors, 3 ) );
+        const material = new THREE.LineBasicMaterial( { vertexColors: THREE.VertexColors, linewidth: 10 } )
+        const splineObject = new THREE.Line( geometry, material )
+        splineObject.computeLineDistances();
+        return splineObject
+    }
+
+    // 继承自定义图形对象 实现画任意线段的功能
+    class MxAnyLine extends  Mx.MxDbEntity {
+        
+        // 顶点列表
+        points = []
+
+        // 线段中心点
+        centerPt = new THREE.Vector3()
+
+        // 动态绘制
+        worldDraw(pWorldDraw) {
+                // 创建任意线段three.js的线对象
+                const line = createAnyLine(this.points)
+                // 计算线对象的包围盒
+                line.geometry.computeBoundingBox()
+                // 获取中心点
+                line.geometry.boundingBox.getCenter(this.centerPt)
+                // 动态绘制这个线对象
+                pWorldDraw.drawEntity(line)
+        }
+        // 显示操作的顶点 点击这个顶点就可以进行移动操作
+        getGripPoints() {
+            return [this.centerPt]
+        }
+
+        // 显示的顶点移动事件， index表示移动的是那个点， offset是移动的偏移量
+        moveGripPointsAt(index, offset) {
+            this.points.forEach((pt)=> {
+                pt.add(offset);
+            })
+            
+            return true;
+        }
+
+        // 自定义对象在绘制时会重新创建
+        create() {       
+            return new this.constructor()
+        }
+
+        // 因为绘制会不断创建新的对象，所以这里是将上一个对象属性复制给新的对象
+        dwgIn(obj) {
+            // // 这里是公共的属性
+            this.onDwgIn(obj);
+            //  // 这里是自定义对象自己的属性
+            let ary = obj["points"];
+            this.points = [];
+            this.centerPt  = obj["centerPt"];
+            ary.forEach((val) => {
+                this.points.push(val.clone());
+            });
+            return true;
+        }
+        // 输出同理 就是新对象和旧对象属性的复制 确保在绘制的时候这些属性值存在
+        dwgOut(obj) {
+            this.onDwgOut(obj);
+            obj["points"] = [];
+            obj["centerPt"] = this.centerPt
+            this.points.forEach((val) => {
+                obj["points"].push(val.clone());
+            });
+            return obj
+        }
+    }
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            cadFile: "../../demo/buf/$hhhh.dwg",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        
+        // 实例化取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+
+        // 鼠标第一次点击
+        getPoint.go((status) => {
+            if (status != 0) {
+                return
+            }
+
+            // 当前鼠标位置
+            const pt1 = getPoint.value()
+
+            // 实例化任意线段
+            const anyLine = new MxAnyLine();
+            anyLine.points.push(pt1)
+          
+            // 实例化动态绘制对象
+            const worldDrawComment = new Mx.McEdGetPointWorldDrawObject();
+            // 设置动态绘制回调函数
+            worldDrawComment.setDraw((currentPoint) => {
+                // 设置线段第二个点位置
+                anyLine.points.push(currentPoint.clone())
+                // 绘制矩形对象rect
+                worldDrawComment.drawCustomEntity(anyLine);
+            });
+
+            // 让当前去点对象使用动态绘制对象
+            getPoint.setUserDraw(worldDrawComment)
+
+            getPoint.go(()=> {
+                // 获取控件对象并将图片对象svg添加到画布中
+                Mx.MxFun.getCurrentDraw().addMxEntity(anyLine);
+            })
+
+        })
+    })
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>
